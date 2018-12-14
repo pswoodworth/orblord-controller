@@ -134,6 +134,9 @@ function run() {
   const log = snakeLocations.map(point => [point.x, point.y, 255, 255, 255])
   console.log(log);
   lord.points(log)
+  const log2 = [foodLocation.x, foodLocation.y, 255, 0, 0]
+  console.log(log2)
+  // lord.point(log2)
   lord.draw()
 }
 
