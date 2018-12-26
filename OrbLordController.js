@@ -1,72 +1,116 @@
-const express = require('express')
+const express = require('express');
 const bodyParser = require('body-parser');
-const Socket = require("net").Socket;
-const createOPCStream = require("opc");
-const createStrand = require("opc/strand");
+const { Socket } = require('net');
+const createOPCStream = require('opc');
+const createStrand = require('opc/strand');
 
 
-
-const port = 3000
+const port = 3000;
 
 class OrbLordController {
-  constructor(){
+  constructor({
+    width, height, debug = true, controls,
+  }) {
+    this.width = width;
+    this.height = height;
+    this.debug = debug;
+    this.controls = controls;
+    this.controlState = controls.reduce(
+      (controlState, controller) => {
+        switch (controller.type) {
+          case 'BUTTON':
+            return Object.assign({}, controlState, { [controller.name]: 'UP' });
+          default:
+            return controlState;
+        }
+      }, {},
+    );
+    console.log(this.controlState);
+
+    this.commandQueue = [];
+
+    this._clearDebugMap();
+    this._initFadeCandy();
+    this._initServer();
+  }
+
+  _clearDebugMap() {
+    this.debugMap = Array(this.height).fill(0).map(() => Array(this.width).fill([0, 0, 0]));
+  }
+
+  _initFadeCandy() {
     this.socket = new Socket();
-    this.socket.setNoDelay
+    this.socket.setNoDelay;
+    this.socket.on('error', (err) => {
+      if (err.code === 'ECONNREFUSED' && this.debug) {
+        console.warn('FadeCandy not connected, running in debug mode!');
+      } else {
+        throw Error(err);
+      }
+    });
     this.socket.connect(7890);
     this.stream = createOPCStream();
     this.stream.pipe(this.socket);
-    this.strand = createStrand(198);
-    this.commandQueue = [];
-    this._initEventServer();
-  }
-  _initEventServer(){
-    this.app = express()
-    this.app.use(bodyParser.json())
-    this.app.post('/cmd', (req, res) => {
-      console.log(req.body);
-      this._pushCommand(req.body.key)
-      res.sendStatus(200);
-    })
-    this.app.listen(port, () => console.log(`Orblord controller listening on port ${port}!`))
+    this.strand = createStrand(this.width * this.height);
   }
 
-  _pushCommand(command){
-    this.commandQueue.push(command)
+  _initServer() {
+    this.app = express();
+    const server = require('http').Server(this.app);
+    this.debugSocket = require('socket.io')(server);
+    this.app.use(bodyParser.json());
+    this.app.use('/', express.static('../debugger/build'));
+    this.app.post('/cmd', (req, res) => {
+      this.handleCommand(req.body);
+      res.sendStatus(200);
+    });
+    this.debugSocket.on('connection', (socket) => {
+      socket.emit('controls', this.controls);
+    });
+    server.listen(port, () => console.log(`Orblord controller listening on port ${port}!`));
   }
-  popCommands(){
+
+  handleCommand(command) {
+    this.controlState[command.control] = command.state;
+    this.commandQueue.push(command);
+  }
+
+  popCommands() {
     const result = [].concat(this.commandQueue);
     this.commandQueue = [];
     return result;
   }
-  _getLED(x,y){
-    return y*11 + x;
+
+  _getLED(x, y) {
+    return y * this.width + x;
   }
-  clear(){
-    Array(198).fill(0).forEach((item, index)=>{this.strand.setPixel(index, 0, 0, 0)});
+
+  clear() {
+    this._clearDebugMap();
+    Array(198).fill(0).forEach((item, index) => { this.strand.setPixel(index, 0, 0, 0); });
   }
-  point(x, y, r=255, g=255, b=255){
-    this.strand.setPixel(this._getLED(x,y), g, r, b);
+
+  point([x, y], [r = 255, g = 255, b = 255]) {
+    // skip pixels that overflow
+    if (x < 0 || x > this.width - 1) return;
+    if (y < 0 || y > this.height - 1) return;
+
+    this.strand.setPixel(this._getLED(x, y), g, r, b);
+    this.debugMap[y][x] = [r, g, b];
   }
-  points(array){
-    array.forEach(point => this.point(point[0], point[1], point[2], point[3], point[4]))
+
+  shape(shape) {
+    this.points(shape.getPoints());
   }
-  draw(){
-    this.stream.writePixels(0, this.strand.buffer)
+
+  points(array) {
+    array.forEach(point => this.point(point[0], point[1]));
+  }
+
+  draw() {
+    this.stream.writePixels(0, this.strand.buffer);
+    this.debugSocket.sockets.emit('map', this.debugMap);
   }
 }
 
 module.exports = OrbLordController;
-
-
-
-
-
-
-
-
-
-
-//
-// Array(198).fill(0).forEach((item, index)=>{strand.setPixel(index, 0, 0, 0)})
-// strand.setPixel(getLED(state.x, state.y), 255, 255, 255)
-// stream.writePixels(0, strand.buffer)

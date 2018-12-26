@@ -1,0 +1,45 @@
+.wrapper{
+  display: flex;
+  width: 100%;
+}
+
+.orbs{
+  display: flex;
+  flex-direction: column;
+}
+
+.orbs-row{
+  flex-grow: 1;
+  display: flex;
+  margin-bottom: 2px;
+}
+
+.orbs-row:first-child{
+  margin-top: 2px;
+}
+
+.orbs-item{
+  margin-right: 2px;
+  width: 20px;
+  height: 20px;
+}
+
+.orbs-item:first-child{
+  margin-left: 2px;
+}
+
+.controls{
+  flex-grow: 1;
+}
+
+.control{
+  width: 30%;
+  margin: 1%;
+  background-color: red;
+  color: white;
+  text-align: center;
+  display: inline-block;
+  padding: 20px 0px;
+  font-size: 20px;
+  font-weight: bold;
+}
