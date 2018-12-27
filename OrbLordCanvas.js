@@ -198,30 +198,25 @@ function multiPointTypeToArray(pointPointsOrShape) {
 }
 
 function rotatePoint(point, angle, origin) {
-  // console.log('ROTATION FOR', point, 'AT', angle, 'FROM', origin);
   const angleRadians = angle * (Math.PI / 180);
-  // console.log('ANGLE', angleRadians / Math.PI, 'PI');
+
   const originX = origin[0];
   const originY = origin[1] * -1; // inverting y's
+
   const pointX = point[0];
   const pointY = point[1] * -1;
+
   const relX = pointX - originX;
   const relY = pointY - originY;
+
   const radius = ((relX ** 2) + (relY ** 2)) ** 0.5;
   const theta = Math.atan2(relY, relX);
-  // console.log('CONVERTED BACK FROM POLAR');
-  // console.log('Y', (radius * Math.sin(theta) + originY) * (-1));
-  // console.log('X', (radius * Math.cos(theta) + originX));
 
   const totalRotation = theta + angleRadians;
-  // console.log('TOTAL RADIUS', totalRotation);
-  // console.log('SIN', Math.sin(totalRotation));
+
   const y = ((radius * Math.sin(totalRotation)) + originY) * (-1);
-  // console.log('Y', y);
-  // console.log('COSINE', Math.cos(totalRotation));
   const x = (radius * Math.cos(totalRotation)) + originX;
-  // console.log('X', x);
-  // console.log('++++++++');
+
   return [Math.round(x), Math.round(y)];
 }
 

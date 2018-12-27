@@ -54,36 +54,38 @@ const s2 = new Shape({
 
 function loop() {
   const command = lord.popCommands().pop();
-  switch (command && command.key) {
-    case 'LEFT':
-      s.moveLeft(1);
-      break;
-    case 'RIGHT':
-      s.moveRight(1);
-      break;
-    case 'UP':
-      s.moveUp(1);
-      break;
-    case 'DOWN':
-      s.moveDown(1);
-      break;
-    case 'D':
-      s.removePointAtPosition([3, 1]);
-      break;
-    case 'A':
-      s.addPointAtPosition([3, 1]);
-      break;
-    case 'I':
-      console.log(s.getIntersectionPosition(s2));
-      break;
-    case 'R':
-      s.rotate(90);
-      break;
-    case 'E':
-      s2.rotate(90);
-      break;
-    default:
-      break;
+  if (command && command.state === 'DOWN') {
+    switch (command.control) {
+      case 'LEFT':
+        s.moveLeft(1);
+        break;
+      case 'RIGHT':
+        s.moveRight(1);
+        break;
+      case 'UP':
+        s.moveUp(1);
+        break;
+      case 'DOWN':
+        s.moveDown(1);
+        break;
+      case 'D':
+        s.removePointAtPosition([3, 1]);
+        break;
+      case 'A':
+        s.addPointAtPosition([3, 1]);
+        break;
+      case 'I':
+        console.log(s.getIntersectionPosition(s2));
+        break;
+      case 'R':
+        s.rotate(90);
+        break;
+      case 'E':
+        s2.rotate(90);
+        break;
+      default:
+        break;
+    }
   }
 
   lord.clear();

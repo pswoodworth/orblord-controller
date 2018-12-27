@@ -27,7 +27,7 @@ class OrbLordController {
     );
     console.log(this.controlState);
 
-    this.commandQueue = [];
+    this.commandQueues = [];
 
     this._clearDebugMap();
     this._initFadeCandy();
@@ -71,14 +71,14 @@ class OrbLordController {
   }
 
   handleCommand(command) {
+    this.commandQueues.forEach((commandQueue) => {
+      commandQueue.pushCommand(command);
+    });
     this.controlState[command.control] = command.state;
-    this.commandQueue.push(command);
   }
 
-  popCommands() {
-    const result = [].concat(this.commandQueue);
-    this.commandQueue = [];
-    return result;
+  registerCommandQueue(commandQueue) {
+    this.commandQueues.push(commandQueue);
   }
 
   _getLED(x, y) {
