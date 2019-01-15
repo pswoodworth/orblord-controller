@@ -11,7 +11,11 @@
   "dependencies": {
     "body-parser": "^1.18.3",
     "express": "^4.16.4",
+    "game-of-life-logic": "^1.0.0",
+    "gamecontroller": "git+https://git@github.com/pswoodworth/node-gamecontroller.git",
+    "node-hid": "^0.7.6",
     "opc": "^1.1.3",
+    "snes-controller": "^0.1.4",
     "socket.io": "^2.2.0"
   },
   "devDependencies": {

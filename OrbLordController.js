@@ -9,12 +9,13 @@ const port = 3000;
 
 class OrbLordController {
   constructor({
-    width, height, debug = true, controls,
+    width, height, debug = true, controls = [], black = [0, 0, 0],
   }) {
     this.width = width;
     this.height = height;
     this.debug = debug;
     this.controls = controls;
+    this.black = black;
     this.controlState = controls.reduce(
       (controlState, controller) => {
         switch (controller.type) {
@@ -87,7 +88,7 @@ class OrbLordController {
 
   clear() {
     this._clearDebugMap();
-    Array(198).fill(0).forEach((item, index) => { this.strand.setPixel(index, 0, 0, 0); });
+    Array(this.width * this.height).fill(0).forEach((item, index) => { this.strand.setPixel(index, ...this.black); });
   }
 
   point([x, y], [r = 255, g = 255, b = 255]) {
@@ -97,6 +98,10 @@ class OrbLordController {
 
     this.strand.setPixel(this._getLED(x, y), g, r, b);
     this.debugMap[y][x] = [r, g, b];
+  }
+
+  absolutePoint(n, [r = 255, g = 255, b = 255]) {
+    this.strand.setPixel(n, g, r, b);
   }
 
   shape(shape) {

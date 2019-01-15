@@ -36,6 +36,14 @@ class Shape {
     return this.indexOfPoint(point) !== -1;
   }
 
+  setPoints(points) {
+    this.points = points;
+  }
+
+  set(options) {
+    Object.assign(this, options);
+  }
+
   containsPosition(position) {
     const point = this.unTransformPosition(position);
     return this.containsPoint(point);
