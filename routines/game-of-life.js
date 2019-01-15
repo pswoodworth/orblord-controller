@@ -58,4 +58,4 @@ function loop() {
   lord.draw();
 }
 
-setInterval(loop, 1000);
+setInterval(loop, 1500);
