@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 
+// TODO: REFACTORED BUTTONS TO BOOLEANS
 export default class Controls extends Component {
   constructor(){
     super()

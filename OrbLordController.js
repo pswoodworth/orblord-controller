@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const { Socket } = require('net');
 const createOPCStream = require('opc');
 const createStrand = require('opc/strand');
+const randomstring = require('randomstring');
 
 
 const port = 3000;
@@ -16,23 +17,42 @@ class OrbLordController {
     this.debug = debug;
     this.controls = controls;
     this.black = black;
-    this.controlState = controls.reduce(
-      (controlState, controller) => {
-        switch (controller.type) {
-          case 'BUTTON':
-            return Object.assign({}, controlState, { [controller.name]: 'UP' });
-          default:
-            return controlState;
-        }
-      }, {},
-    );
+    this.controlState = {};
+    this.controlHooks = {};
+
+    this.controls.forEach((control) => { this.addControl(control); });
     console.log(this.controlState);
 
     this.commandQueues = [];
 
+    this.addControl = this.addControl.bind(this);
+
     this._clearDebugMap();
     this._initFadeCandy();
     this._initServer();
+  }
+
+  addControl(controller) {
+    let initialState;
+    switch (controller.type) {
+      case 'BUTTON':
+        initialState = false;
+        break;
+      default:
+        console.warn(`Unsupported controller type ${controller.type}`);
+    }
+    Object.assign(this.controlState, { [controller.name]: initialState });
+    Object.assign(this.controlHooks, { [controller.name]: {} });
+  }
+
+  on(control, callback) {
+    const id = randomstring.generate(7);
+    this.controlHooks[control][id] = callback;
+    return { control, id };
+  }
+
+  off({ control, id }) {
+    delete this.controlHooks[control][id];
   }
 
   _clearDebugMap() {
@@ -76,6 +96,7 @@ class OrbLordController {
       commandQueue.pushCommand(command);
     });
     this.controlState[command.control] = command.state;
+    Object.values(this.controlHooks[command.control]).forEach((callback) => { callback(command.state); });
   }
 
   registerCommandQueue(commandQueue) {
