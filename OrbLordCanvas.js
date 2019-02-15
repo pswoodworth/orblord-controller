@@ -162,6 +162,7 @@ class Shape {
 
   intersectsPosition(positionPositionsOrShape) {
     const positions = multiPointTypeToArray(positionPositionsOrShape);
+    console.log(positions);
     return Boolean(positions.find(this.containsPosition));
   }
 
@@ -171,13 +172,12 @@ class Shape {
   }
 
   getPoints() {
-    return this.points.reduce((res, point) => {
+    return this.points.map((point) => {
       const position = this.transformPoint(point);
       // TODO: change color handling to handle gradients
       const color = this.fillColor;
-      res.push([position, color]);
-      return res;
-    }, []);
+      return [position, color];
+    });
   }
 }
 
@@ -187,10 +187,26 @@ class Gradient {
   }
 }
 
-class Rectangle {
-  constructor({ topLeft, bottomRight }) {
-    // TODO: add functions for multiple ways of declaring shapes:
-    // width, heiggh, center
+class Rectangle extends Shape {
+  constructor({
+    topLeft,
+    bottomRight,
+    fillColor,
+    rotation,
+    rotationOrigin = 'MASS_CENTER',
+  }) {
+    super({
+      fillColor, rotation, rotationOrigin, position: topLeft,
+    });
+    const points = [];
+    const width = bottomRight[0] - topLeft[0];
+    const height = bottomRight[1] - topLeft[1];
+    for (let x = 0; x <= width; x += 1) {
+      for (let y = 0; y <= height; y += 1) {
+        points.push([x, y]);
+      }
+    }
+    this.set({ points });
   }
 }
 
@@ -198,6 +214,9 @@ class Rectangle {
 function multiPointTypeToArray(pointPointsOrShape) {
   if (pointPointsOrShape instanceof Shape) {
     return pointPointsOrShape.getPoints().map(p => p[0]);
+  }
+  if (pointPointsOrShape[0] instanceof Shape) {
+    return pointPointsOrShape.reduce((r, s) => r.concat(s.getPoints()), []).map(p => p[0]);
   }
   if (Array.isArray(pointPointsOrShape[0])) {
     return pointPointsOrShape;

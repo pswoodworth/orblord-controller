@@ -129,6 +129,10 @@ class OrbLordController {
     this.points(shape.getPoints());
   }
 
+  shapes(shapes) {
+    shapes.forEach(shape => this.shape(shape));
+  }
+
   points(array) {
     array.forEach(point => this.point(point[0], point[1]));
   }

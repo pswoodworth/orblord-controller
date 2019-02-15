@@ -23,7 +23,7 @@ export default class Controls extends Component {
   }
   handleKeyPress(event){
     const key = event.key;
-    const state = event.type === 'keydown' ? 'DOWN' : 'UP';
+    const state = event.type === 'keydown';
     this.props.controls.forEach((control)=>{
       if(control.debugKey === key){
         this.sendCommand({control: control.name, state });
