@@ -1,25 +1,12 @@
+const TetrisCore = require('./TetrisCore').default;
+const tetrisOptions = require('./tetris-core-options');
 const Controller = require('../OrbLordController');
+const hexRgb = require('hex-rgb');
+
 // const translateController = require('../translateController');
-const { Shape, Rectangle } = require('../OrbLordCanvas');
-const { cloneDeep } = require('lodash');
-// const CommandQueue = require('../CommandQueue');
 
-const PIECES = [
-  [[0, -3], [0, -2], [0, -1], [0, 0]],
-  [[-1, -1], [0, -1], [0, 0], [1, 0]],
-  [[0, -1], [1, -1], [-1, 0], [0, 0]],
-  [[0, -2], [0, -1], [0, 0], [1, 0]],
-  [[0, -1], [1, -1], [0, 0], [1, 0]],
-];
-
-const COLORS = [
-  [255, 0, 0],
-  [0, 255, 0],
-  [125, 125, 255],
-];
-
-const LATCH_INTERVAL = 180;
-const LATCH_PAUSE = 220;
+const LATCH_INTERVAL = 200;
+const LATCH_PAUSE = 250;
 
 class Tetris {
   constructor({
@@ -33,35 +20,31 @@ class Tetris {
     this.width = width || controller.width;
     this.height = height || controller.height;
     this.controller = controller;
-
-    this.dockedPieces = [];
+    this.tc = new TetrisCore(tetrisOptions({ width: this.width, height: this.height }));
+    this.tc.on('render', ({
+      stage, score, speed, nextBlock, display,
+    }) => {
+      // stage ==> number
+      // score ==> number
+      // speed ==> number
+      // nextBlock ==> two dimensional array (0 or block hex color code)
+      // display ==> two dimensional array (0 or block hex color code)
+      // console.log(display);
+      this.controller.clear();
+      if (display) {
+        display.forEach((row, y) => {
+          row.forEach((color, x) => {
+            if (color) {
+              const rgbColor = hexRgb(color);
+              this.controller.point([x, y], [rgbColor.red, rgbColor.green, rgbColor.blue]);
+            }
+          });
+        });
+      }
+      this.controller.draw();
+    });
   }
 
-  createBoundaries() {
-    this.boundaries = [
-      new Rectangle({ topLeft: [0, 0], bottomRight: [0, this.height - 1] }), // LEFT
-      new Rectangle({ topLeft: [0, 0], bottomRight: [this.width - 1, 0] }), // TOP
-      new Rectangle({ topLeft: [this.width - 1, 0], bottomRight: [this.width - 1, this.height - 1] }), // RIGHT
-      new Rectangle({ topLeft: [0, this.height - 1], bottomRight: [this.width - 1, this.height - 1] }), // BOTTOM
-    ];
-  }
-
-  createClearLines() {
-    this.clearLines = [
-      // create invisible shapes to check fo interspection
-    ];
-  }
-
-  createNewActivePiece() {
-    const points = PIECES[Math.floor(Math.random() * PIECES.length)];
-    const fillColor = COLORS[Math.floor(Math.random() * COLORS.length)];
-    const position = [Math.floor(this.width / 2), 0];
-    this.activePiece = new Shape({ fillColor, points, position });
-  }
-
-  advanceActivePiece() {
-    this.activePiece.moveDown(1);
-  }
 
   draw() {
     this.controller.clear();
@@ -72,57 +55,60 @@ class Tetris {
     this.controller.draw();
   }
 
-  moveActivePieceSideways(direction) {
-    const movement = direction === 'LEFT' ? [-1, 0] : [1, 0];
-    const clone = cloneDeep(this.activePiece);
-    clone.move(...movement);
-    if (!clone.intersectsPosition(this.boundaries)) {
-      this.activePiece.move(...movement);
-    } else {
-      console.log('collision!');
-    }
-  }
 
   start() {
-    this.createBoundaries();
     this.attachControls();
-    this.createNewActivePiece();
-    setInterval(() => {
-      this.draw();
-    }, 20);
-    setInterval(() => {
-      this.advanceActivePiece();
-    }, 750);
+    this.tc.start();
   }
 
   handleSideControl(direction, buttonIsDown) {
     const controlName = direction === 'LEFT' ? this.controls.moveLeft : this.controls.moveRight;
     const otherControlName = direction === 'LEFT' ? this.controls.moveRight : this.controls.moveLeft;
     const otherDirection = direction === 'LEFT' ? 'RIGHT' : 'LEFT';
+    const move = direction === 'LEFT' ? this.tc.moveLeft.bind(this.tc) : this.tc.moveRight.bind(this.tc);
     if (buttonIsDown) {
       this.isMoving = true;
-      this.moveActivePieceSideways(direction);
-      clearInterval(this.controllerLatches[otherDirection]);
-      setTimeout(() => {
-        if (this.controller.controlState[controlName]) {
-          this.controllerLatches[direction] = setInterval(() => {
-            this.moveActivePieceSideways(direction);
-          }, LATCH_INTERVAL);
-        }
-      }, LATCH_PAUSE);
+      move();
+      clearInterval(this.controlLatches[direction]);
+      clearInterval(this.controlLatches[otherDirection]);
+      if (this.controller.controlState[controlName]) {
+        this.controlLatches[direction] = setInterval(() => {
+          move();
+        }, LATCH_INTERVAL);
+      }
     } else {
-      clearInterval(this.controllerLatches[direction]);
+      clearInterval(this.controlLatches[direction]);
       if (this.controller.controlState[otherControlName]) {
         this.handleSideControl(otherDirection, true);
       }
     }
   }
 
+  handleRotateControl(buttonIsDown) {
+    if (buttonIsDown) {
+      this.tc.rotate();
+    }
+  }
+
+  handleDropControl(buttonIsDown) {
+    if (buttonIsDown) {
+      clearInterval(this.controlLatches.DOWN);
+      this.tc.moveDown();
+      this.controlLatches.DOWN = setInterval(() => {
+        this.tc.moveDown();
+      }, LATCH_INTERVAL);
+    } else {
+      clearInterval(this.controlLatches.DOWN);
+    }
+  }
+
 
   attachControls() {
-    this.controllerLatches = {};
+    this.controlLatches = {};
     this.controller.on(this.controls.moveLeft, this.handleSideControl.bind(this, 'LEFT'));
     this.controller.on(this.controls.moveRight, this.handleSideControl.bind(this, 'RIGHT'));
+    this.controller.on(this.controls.rotate, this.handleRotateControl.bind(this));
+    this.controller.on(this.controls.drop, this.handleDropControl.bind(this));
   }
 }
 
@@ -152,7 +138,7 @@ const t = new Tetris({
   controls: {
     moveLeft: 'LEFT', moveRight: 'RIGHT', rotate: 'UP', drop: 'DOWN',
   },
-  width: 10,
+  width: 11,
   height: 18,
   controller: c,
 });
