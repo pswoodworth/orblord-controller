@@ -69,6 +69,7 @@ class Tetris {
   start(buttonIsDown) {
     if (!this.started && buttonIsDown) {
       this.started = true;
+      this.clearLatches();
       this.createTC();
       this.tc.start();
     }
