@@ -66,25 +66,29 @@ class Tetris {
     this.controller.shape(this.clearRect);
   }
 
-  start() {
-    if (!this.started) {
+  start(buttonIsDown) {
+    if (!this.started && buttonIsDown) {
       this.started = true;
       this.createTC();
       this.tc.start();
     }
+    Object.keys(this.controlLatches).forEach((button) => {
+      clearInterval(this.controlLatches[button]);
+    });
   }
 
   handleSideControl(direction, buttonIsDown) {
+    const otherDirection = direction === 'LEFT' ? 'RIGHT' : 'LEFT';
+    clearInterval(this.controlLatches[direction]);
+    clearInterval(this.controlLatches[otherDirection]);
     if (!this.started) return;
+
     const controlName = direction === 'LEFT' ? this.controls.moveLeft : this.controls.moveRight;
     const otherControlName = direction === 'LEFT' ? this.controls.moveRight : this.controls.moveLeft;
-    const otherDirection = direction === 'LEFT' ? 'RIGHT' : 'LEFT';
     const move = direction === 'LEFT' ? this.tc.moveLeft.bind(this.tc) : this.tc.moveRight.bind(this.tc);
     if (buttonIsDown) {
       this.isMoving = true;
       move();
-      clearInterval(this.controlLatches[direction]);
-      clearInterval(this.controlLatches[otherDirection]);
       if (this.controller.controlState[controlName]) {
         this.controlLatches[direction] = setInterval(() => {
           move();
@@ -106,15 +110,13 @@ class Tetris {
   }
 
   handleDropControl(buttonIsDown) {
+    clearInterval(this.controlLatches.DOWN);
     if (!this.started) return;
     if (buttonIsDown) {
-      clearInterval(this.controlLatches.DOWN);
       this.tc.moveDown();
       this.controlLatches.DOWN = setInterval(() => {
         this.tc.moveDown();
       }, LATCH_INTERVAL);
-    } else {
-      clearInterval(this.controlLatches.DOWN);
     }
   }
 
@@ -173,17 +175,17 @@ const t1 = new Tetris({
   controls: {
     moveLeft: 'LEFT-1', moveRight: 'RIGHT-1', rotate: 'ROTATE-1', drop: 'DOWN-1', start: 'START-1',
   },
-  width: 12,
+  width: 11,
   height: 19,
   controller: c,
-  origin: [0, 0],
+  origin: [1, 0],
 });
 
 const t2 = new Tetris({
   controls: {
     moveLeft: 'LEFT-2', moveRight: 'RIGHT-2', rotate: 'ROTATE-2', drop: 'DOWN-2', start: 'START-2',
   },
-  width: 12,
+  width: 11,
   height: 19,
   controller: c,
   origin: [14, 0],
