@@ -58,7 +58,7 @@ class Tetris {
     this.clearRect = new Rectangle({
       topLeft: this.origin,
       bottomRight: [this.origin[0] + this.width, this.origin[1] + this.height],
-      fillColor: [10, 10, 10],
+      fillColor: [50, 50, 50],
     });
   }
 
