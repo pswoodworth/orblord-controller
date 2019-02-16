@@ -71,10 +71,10 @@ class Tetris {
       this.started = true;
       this.createTC();
       this.tc.start();
+      Object.keys(this.controlLatches).forEach((button) => {
+        clearInterval(this.controlLatches[button]);
+      });
     }
-    Object.keys(this.controlLatches).forEach((button) => {
-      clearInterval(this.controlLatches[button]);
-    });
   }
 
   handleSideControl(direction, buttonIsDown) {
@@ -110,8 +110,8 @@ class Tetris {
   }
 
   handleDropControl(buttonIsDown) {
-    clearInterval(this.controlLatches.DOWN);
     if (!this.started) return;
+    clearInterval(this.controlLatches.DOWN);
     if (buttonIsDown) {
       this.tc.moveDown();
       this.controlLatches.DOWN = setInterval(() => {
